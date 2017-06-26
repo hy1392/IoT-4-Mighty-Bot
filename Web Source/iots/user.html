@@ -1,0 +1,110 @@
+<script src="js/sweetalert.min.js"></script>
+<link rel="stylesheet" type="text/css" href="js/sweetalert.css">
+<div class="modal fade" id="modal1" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content modal-popup">
+      <a href="#" class="close-link" onclick="$('#modal1').modal('toggle')"><i class="icon_close_alt2"></i></a>
+      <h3 class="white">로그인</h3>
+      <form action="" class="popup-form">
+        <input type="text" class="form-control form-white" id="id" placeholder="ID">
+        <input type="text" class="form-control form-white" id="pwd" placeholder="PASSWORD">
+        <p style="color:white;font-size:1em;cursor:pointer" class="register">아직 회원이 아니신가요?</p>
+
+        <button type="button" class="btn btn-submit login-btn">로그인</button>
+      </form>
+    </div>
+  </div>
+</div>
+<div class="modal fade" id="modal2" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content modal-popup">
+      <a href="#" class="close-link" onclick="$('#modal2').modal('toggle')"><i class="icon_close_alt2"></i></a>
+      <h3 class="white">회원가입</h3>
+      <form action="" class="popup-form">
+        <input type="text" class="form-control form-white" id="rid" placeholder="ID">
+        <input type="text" class="form-control form-white" id="rpwd" placeholder="PASSWORD">
+        <input type="text" class="form-control form-white" id="rpwdc" placeholder="PASSWORD CONFIRM">
+        <p style="color:white;font-size:1em;cursor:pointer" class="register2">이미 회원이신가요?</p>
+
+        <button type="button" class="btn btn-submit register-btn">회원가입</button>
+      </form>
+    </div>
+  </div>
+</div>
+<script>
+  $(".register").on("click",function(){
+      $("#modal1").modal("toggle");
+      $("#modal2").modal("toggle");
+  });
+
+  $(".register2").on("click",function(){
+      $("#modal2").modal("toggle");
+      $("#modal1").modal("toggle");
+  });
+
+  $(".login-btn").on("click",function(){
+      $.ajax({
+        url:"server/login.php",//데이터를 전송할 파일
+        type:"POST",//전송 방식
+        data:{//보낼 데이터 key:value형식의 맵
+          id:$("#id").val(),
+          pwd :$("#pwd").val()
+        },
+        success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+          if(data=="success"){
+            location.href="index.html";
+            }
+          else{
+            swal("",data,"error");
+          }
+        },
+    error: function(){
+        swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+      }
+    });
+  });
+
+  $(".register-btn").on("click",function(){
+    if($("#rpwd").val()==$("#rpwdc").val()){
+        $.ajax({
+          url:"server/register.php",//데이터를 전송할 파일
+          type:"POST",//전송 방식
+          data:{//보낼 데이터 key:value형식의 맵
+            id:$("#rid").val(),
+            pwd :$("#rpwd").val(),
+          },
+          success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+            if(data=="success"){
+              swal({
+                title: "회원가입 성공!",
+                text: "회원가입이 성공적으로 완료되었습니다.",
+                type: "success"
+              },
+              function(){
+                swal("Deleted!", "Your imaginary file has been deleted.", "success");
+                location.href="index.html";
+              });
+              }
+            else{
+              swal("",data,"error");
+            }
+          },
+      error: function(){
+          swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+        }
+      });
+    }
+    else{
+        swal("","비밀번호와 비밀번호 확인이 같지 않습니다.","error");
+    }
+  });
+  $.fn.extend({
+    animateCss: function (animationName) {
+        var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+        this.addClass('animated ' + animationName).one(animationEnd, function() {
+            $(this).removeClass('animated ' + animationName);
+        });
+    }
+});
+
+</script>

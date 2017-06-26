@@ -1,0 +1,850 @@
+<!DOCTYPE html>
+<?
+  session_start();
+  require_once 'server/dbconnect.php';
+?>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js" type="text/javascript"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+  <meta http-equiv="x-ua-compatible" content="ie=edge">
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.0/css/font-awesome.min.css">
+  <!-- Bootstrap core CSS -->
+  <link href="css/bootstrap.min.css" rel="stylesheet">
+  <!-- Material Design Bootstrap -->
+  <link href="css/mdb.min.css" rel="stylesheet">
+  <!-- Your custom styles (optional) -->
+  <link href="css/style.css" rel="stylesheet">
+
+  <script
+  src="https://code.jquery.com/jquery-3.2.1.js"
+  integrity="sha256-DZAnKJ/6XZ9si04Hgrsxu/8s717jcIzLy3oi35EouyE="
+  crossorigin="anonymous"></script>
+
+  <script src="js/sweetalert.min.js"></script>
+  <link rel="stylesheet" type="text/css" href="js/sweetalert.css">
+
+  <title>IoT 4조</title>
+  <style media="screen">
+  @import url(http://fonts.googleapis.com/earlyaccess/hanna.css);
+  html,body *{
+    font-family: 'Hanna', serif;
+  }
+      .hum, .tem{
+        margin:2.5px;
+        width: 100px;
+      }
+      .col{
+        margin:4px;
+      }
+      .col-md-4 > div{
+        border-radius: 4%;
+      }
+  </style>
+</head>
+
+<body class=" animated slideInUp">
+  <!--Navbar-->
+  <!--Modal: Login Form-->
+<div class="modal fade" id="modalLogin" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
+
+            <!--Header-->
+            <div class="modal-header light-blue darken-3 white-text">
+                <h4 class="title"><i class="fa fa-user"></i> 로그인하기</h4>
+            </div>
+            <!--Body-->
+            <div class="modal-body">
+                <div class="md-form form-sm">
+                    <i class="fa fa-envelope prefix"></i>
+                    <input type="text" id="id" class="form-control">
+                    <label for="form30">아이디</label>
+                </div>
+
+                <div class="md-form form-sm">
+                    <i class="fa fa-lock prefix"></i>
+                    <input type="password" id="pwd" class="form-control">
+                    <label for="form31">비밀번호</label>
+                </div>
+
+                <div class="text-center mt-2">
+                    <button class="btn btn-info login-btn">로그인 <i class="fa fa-sign-in ml-1"></i></button>
+                </div>
+
+            </div>
+            <!--Footer-->
+            <div class="modal-footer">
+                <div class="options text-center text-md-right mt-1">
+                    <p><a onclick="$('#modalLogin').modal('toggle');$('#modalRegister').modal('toggle');">회원가입</a></p>
+                </div>
+                <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">닫기 <i class="fa fa-times-circle ml-1"></i></button>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+<!--Modal: Login Form-->
+
+<!--Modal: Register Form-->
+<div class="modal fade" id="modalRegister" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+    <div class="modal-dialog cascading-modal" role="document">
+        <!--Content-->
+        <div class="modal-content">
+
+            <!--Header-->
+            <div class="modal-header light-blue darken-3 white-text">
+                <h4 class="title"><i class="fa fa-user-plus"></i> 회원가입하기</h4>
+            </div>
+            <!--Body-->
+            <div class="modal-body">
+                <div class="md-form form-sm">
+                    <i class="fa fa-envelope prefix"></i>
+                    <input type="text" id="rid" class="form-control">
+                    <label for="form32">아이디</label>
+                </div>
+
+                <div class="md-form form-sm">
+                    <i class="fa fa-lock prefix"></i>
+                    <input type="password" id="rpwd" class="form-control">
+                    <label for="form33">비밀번호</label>
+                </div>
+
+                <div class="md-form form-sm">
+                    <i class="fa fa-lock prefix"></i>
+                    <input type="password" id="rpwdc" class="form-control">
+                    <label for="form34">비밀번호 확인</label>
+                </div>
+
+                <div class="text-center mt-2">
+                    <button class="btn btn-info register-btn">회원가입 <i class="fa fa-sign-in ml-1"></i></button>
+                </div>
+
+            </div>
+            <!--Footer-->
+            <div class="modal-footer">
+                <div class="options text-center text-md-right mt-1">
+                    <p><a onclick="$('#modalRegister').modal('toggle');$('#modalLogin').modal('toggle');">로그인</a></p>
+                </div>
+                <button type="button" class="btn btn-outline-info waves-effect ml-auto" data-dismiss="modal">닫기 <i class="fa fa-times-circle ml-1"></i></button>
+            </div>
+        </div>
+        <!--/.Content-->
+    </div>
+</div>
+<!--Modal: Register Form-->
+
+  <!--Navbar-->
+  <nav class="navbar navbar-toggleable-md navbar-dark bg-primary" style="box-shadow:none;border:solid #6cb0ff; border-width:0 0 1px 0">
+      <div class="container">
+          <button class="navbar-toggler navbar-toggler-right" type="button" data-toggle="collapse" data-target="#navbarNav1" aria-controls="navbarNav1" aria-expanded="false" aria-label="Toggle navigation">
+              <span class="navbar-toggler-icon"></span>
+          </button>
+          <a class="navbar-brand" href="index.html">
+              <strong>Mighty Bot</strong>
+          </a>
+          <div class="collapse navbar-collapse" id="navbarNav1">
+              <ul class="navbar-nav mr-auto">
+                  <li class="nav-item">
+                      <a class="nav-link" href="index.html">Home <span class="sr-only">(current)</span></a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link" href="add.html">함수 만들기</a>
+                  </li>
+                  <li class="nav-item">
+                      <a class="nav-link active" href="manage.html">함수 관리하기</a>
+                  </li>
+                  <?
+                    if(isset($_SESSION['id'])){
+                  ?>
+                    <li class="nav-item">
+                        <a class="nav-link logout-btn">로그아웃</a>
+                    </li>
+                  <?
+                    }
+                    else{
+                  ?>
+                    <li class="nav-item">
+                        <a class="nav-link" onclick="$('#modalLogin').modal('toggle');">로그인</a>
+                    </li>
+                  <?
+                    }
+                  ?>
+              </ul>
+          </div>
+      </div>
+  </nav>
+<div class="flex-center" style="background:#2196F3;height:200px;margin-bottom:32px">
+  <p class="" style="color:white;font-size:3em">나만의 함수 관리하기</p>
+</div>
+
+
+
+  <div class="container">
+    <div class="row">
+      <div class="col">
+        <button type="button" class="btn btn-default btn-lg" name="" value="" onclick="push(1)">1번 모터</button>
+      </div>
+      <div class="col">
+        <button type="button" class="btn btn-default btn-lg" name="" value="" onclick="push(2)">2번 모터</button>
+      </div>
+      <div class="col">
+        <button type="button" class="btn btn-default btn-lg" name="" value="" onclick="push(3)">3번 모터</button>
+      </div>
+      <div class="col">
+        <button type="button" class="btn btn-default btn-lg" name="" value="" onclick="push(4)">4번 모터</button>
+      </div>
+    </div>
+
+    <div class="" style="border:1px solid #eee;padding:16px;margin-bottom:8px;">
+      <div class="row">
+        <div class="col">
+          <canvas id="temChart"></canvas>
+          <p class="text-center" style=""><온도></p>
+        </div>
+        <div class="col">
+          <canvas id="humChart"></canvas>
+          <p class="text-center" style=""><습도></p>
+        </div>
+        <div class="col">
+          <canvas id="lightChart"></canvas>
+          <p class="text-center" style=""><조도></p>
+        </div>
+      </div>
+      <div class="row">
+        <div class="col">
+          <canvas id="ultraChart"></canvas>
+          <p class="text-center" style=""><초음파></p>
+        </div>
+        <div class="col">
+          <canvas id="impactChart"></canvas>
+          <p class="text-center" style=""><충격감지></p>
+        </div>
+        <div class="col">
+        </div>
+      </div>
+    </div>
+    <div class="flex-center" style="height:40px;margin-bottom:32px">
+      <p class="" style=""><현재 센서 상태></p>
+    </div>
+    <input type="hidden" name="" value="0" class="hum">
+    <input type="hidden" name="" value="0" class="tem">
+    <input type="hidden" name="" value="0" class="light">
+    <input type="hidden" name="" value="1000" class="ultra">
+    <input type="hidden" name="" value="0" class="impact">
+
+    <div class="row" style="margin:32px 0;">
+      <?
+        $query = "select distinct alarmid,target from alarm where userid='".$_SESSION['id']."' order by alarmid";
+        $result = mysqli_query($conn, $query);
+        $i=1;
+        while($row = mysqli_fetch_array($result)){
+      ?>
+      <div class="col-sm-6 col-md-4" style="padding:8px">
+        <div class="z-depth-1 hoverable" style="">
+          <div class="flex-" style="background:#2196F3;height:50px;">
+            <p style="font-size:1.4em; font-weight:bold; color:white;margin:0;padding:8px">함수 <?=$i?></p>
+            <button type="button" class="close" aria-label="Close" style="color:white;position: relative;top: -35px;left: -15px;" onclick="deletealarm('<?=$row['alarmid']?>')">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="" style="padding:16px; ">
+            <p style="margin:0">만약</p>
+            <?
+              $query2 = "select * from alarm where alarmid='".$row['alarmid']."'";
+              $result2 = mysqli_query($conn, $query2);
+              while($row2 = mysqli_fetch_array($result2)){
+            ?>
+            <div class="module col-12" style="">
+              <div class="row" style="font-size:1.4em">
+                <div class="sensor1 col-5 text-center" name="" style="padding:0">
+                  <p><?if($row2['name']=="hum"){echo "습도센서";} else if($row2['name']=="tem"){echo "온도센서";} else if($row2['name']=="light"){echo "조도센서";} else if($row2['name']=="ultra"){echo "초음파센서";} else if($row2['name']=="impact"){echo "충격감지센서";}?></p>
+                </div>
+                <div class="param1 col-2 text-center" name="">
+                  <p><?=$row2['param']?></p>
+                </div>
+                <div class="col-5 text-center">
+                  <p><?=$row2['value']?></p>
+                </div>
+              </div>
+            </div>
+            <?
+              }
+            ?>
+            <p class="text-right">이라면</p>
+            <div>
+              <div class="target" name="" style="width:100%;height:38px;font-size:1.4em;padding-left: 30px;">
+                <p><?if($row['target']=="motor1") {echo "모터1";} else if($row['target']=="motor2") {echo "모터2";} else if($row['target']=="motor3") {echo "모터3";} else if($row['target']=="motor4") {echo "모터4";}?></p>
+              </div>
+            </div>
+            <p class="text-right">을(를) 작동시킨다.</p>
+          </div>
+        </div>
+      </div>
+      <?
+        $i+=1;
+        }
+      ?>
+    </div>
+
+  </div>
+  <!--Footer-->
+<footer class="page-footer blue center-on-small-only" style="">
+
+    <!--Footer Links-->
+    
+    <!--/.Footer Links-->
+
+    <!--Copyright-->
+    <div class="footer-copyright">
+        <div class="container-fluid">
+            © 2017 Copyright: Mighty Bot
+        </div>
+    </div>
+    <!--/.Copyright-->
+
+</footer>
+<!--/.Footer-->
+
+  <script type="text/javascript">
+
+  function deletealarm(param){
+    console.log(param);
+    $.ajax({
+      url:"server/alarm.php",
+      type:"POST",
+      data:{
+        condition:"delete",
+        target:param
+      },
+      success: function(data){
+        swal({
+          title: "삭제 성공!",
+          text: "함수가 성공적으로 삭제되었습니다.",
+          type: "success",
+          confirmButtonColor: "#2196F3",
+          confirmButtonText: "확인",
+          closeOnConfirm: false
+        },
+        function(){
+          location.reload();
+        });
+      },
+    error: function(){
+      }
+    });
+  }
+  var temdata = {
+  labels: [1,2,3,4,5,6,7,8,9,10],
+  datasets: [
+      {
+          label: "My First dataset",
+          fillColor: "rgba(220,220,220,0.2)",
+          strokeColor: "rgba(220,220,220,1)",
+          pointColor: "rgba(220,220,220,1)",
+          pointStrokeColor: "#fff",
+          pointHighlightFill: "#fff",
+          pointHighlightStroke: "rgba(220,220,220,1)",
+          data: []
+      }
+      ]
+  };
+  var humdata = {
+  labels: [1,2,3,4,5,6,7,8,9,10],
+  datasets: [
+      {
+          label: "My First dataset",
+          fillColor: "rgba(220,220,220,0.2)",
+          strokeColor: "rgba(220,220,220,1)",
+          pointColor: "rgba(220,220,220,1)",
+          pointStrokeColor: "#fff",
+          pointHighlightFill: "#fff",
+          pointHighlightStroke: "rgba(220,220,220,1)",
+          data: []
+      }
+      ]
+  };
+  var lightdata = {
+  labels: [1,2,3,4,5,6,7,8,9,10],
+  datasets: [
+      {
+          label: "My First dataset",
+          fillColor: "rgba(220,220,220,0.2)",
+          strokeColor: "rgba(220,220,220,1)",
+          pointColor: "rgba(220,220,220,1)",
+          pointStrokeColor: "#fff",
+          pointHighlightFill: "#fff",
+          pointHighlightStroke: "rgba(220,220,220,1)",
+          data: []
+      }
+      ]
+  };
+  var ultradata = {
+  labels: [1,2,3,4,5,6,7,8,9,10],
+  datasets: [
+      {
+          label: "My First dataset",
+          fillColor: "rgba(220,220,220,0.2)",
+          strokeColor: "rgba(220,220,220,1)",
+          pointColor: "rgba(220,220,220,1)",
+          pointStrokeColor: "#fff",
+          pointHighlightFill: "#fff",
+          pointHighlightStroke: "rgba(220,220,220,1)",
+          data: []
+      }
+      ]
+  };
+  var impactdata = {
+  labels: [1,2,3,4,5,6,7,8,9,10],
+  datasets: [
+      {
+          label: "My First dataset",
+          fillColor: "rgba(220,220,220,0.2)",
+          strokeColor: "rgba(220,220,220,1)",
+          pointColor: "rgba(220,220,220,1)",
+          pointStrokeColor: "#fff",
+          pointHighlightFill: "#fff",
+          pointHighlightStroke: "rgba(220,220,220,1)",
+          data: []
+      }
+      ]
+  };
+
+  var option = {
+  responsive: true,
+  };
+  $(function () {
+
+    var ctx = document.getElementById("temChart").getContext('2d');
+    var myLineChart = new Chart(ctx).Line(temdata, option);
+    var ctx = document.getElementById("humChart").getContext('2d');
+    var myLineChart = new Chart(ctx).Line(temdata, option);
+    var ctx = document.getElementById("lightChart").getContext('2d');
+    var myLineChart = new Chart(ctx).Line(temdata, option);
+    var ctx = document.getElementById("ultraChart").getContext('2d');
+    var myLineChart = new Chart(ctx).Line(temdata, option);
+    var ctx = document.getElementById("impactChart").getContext('2d');
+    var myLineChart = new Chart(ctx).Line(temdata, option);
+});
+  function clearCanvas(context, canvas) {
+    context.clearRect(0, 0, canvas.width, canvas.height);
+    var w = canvas.width;
+    canvas.width = 1;
+    canvas.width = w;
+  }
+  function reChart(param,type){
+    var ctx=document.getElementById(param).getContext('2d');
+
+    // ctx.beginPath();
+    switch (type) {
+      case "humdata":
+        var myLineChart = new Chart(ctx).Line(humdata, option);
+        break;
+      case "temdata":
+        var myLineChart = new Chart(ctx).Line(temdata, option);
+        break;
+      case "lightdata":
+        var myLineChart = new Chart(ctx).Line(lightdata, option);
+        break;
+      case "ultradata":
+        var myLineChart = new Chart(ctx).Line(ultradata, option);
+        break;
+      case "impactdata":
+        var myLineChart = new Chart(ctx).Line(impactdata, option);
+        break;
+      default:
+
+    }
+    // ctx.closePath();
+  }
+    $('button[type="button"]').mouseenter(function(){
+      $(this).animateCss('pulse');
+    })
+    $('input').mouseenter(function(){
+      $(this).animateCss('pulse');
+    })
+    $('canvas').mouseenter(function(){
+      $(this).animateCss('pulse');
+    })
+    var functiongroup = new Array();
+    var functions;
+    class Sensor {
+      constructor(name, param, value, target) {
+        this.name=name;
+        this.param=param;
+        this.value=value;
+        this.target=target;
+      }
+    }
+    // Create a client instance
+    //client = new Paho.MQTT.Client("host", port, "client_id");
+    client = new Paho.MQTT.Client("m11.cloudmqtt.com", 30874, "web_" + parseInt(Math.random() * 100, 10));
+
+    // set callback handlers
+    client.onConnectionLost = onConnectionLost;
+    client.onMessageArrived = onMessageArrived;
+    client.onMessageDelivered = onMessageDelivered;
+    var options = {
+      useSSL: true,
+      userName: "root",
+      password: "root",
+      onSuccess: onConnect,
+      onFailure: doFail
+    }
+
+    // connect the client
+    client.connect(options);
+
+    // called when the client connects
+    function onConnect() {
+      // Once a connection has been made, make a subscription and send a message.
+      console.log("onConnect");
+      client.subscribe("environment/hum");
+      client.subscribe("environment/tem");
+      client.subscribe("environment/light");
+      client.subscribe("environment/ultra");
+      client.subscribe("environment/impact");
+      client.subscribe("motor");
+    }
+
+    function doFail(e) {
+      console.log(e);
+    }
+
+    // called when the client loses its connection
+    function onConnectionLost(responseObject) {
+      if (responseObject.errorCode !== 0) {
+        console.log("onConnectionLost:" + responseObject.errorMessage);
+      }
+    }
+
+    // called when a message arrives
+    function onMessageArrived(message) {
+      //console.log(message.destinationName);
+      if(message.destinationName=="motor") return;
+      if(message.destinationName=="environment/hum"){
+        $(".hum").val(message.payloadString);
+        if(humdata["datasets"][0]["data"].length==10){
+            humdata["datasets"][0]["data"].shift();
+            humdata["datasets"][0]["data"].push(message.payloadString);
+            reChart("humChart","humdata");
+        }
+        else{
+          humdata["datasets"][0]["data"].push(message.payloadString);
+          reChart("humChart","humdata");
+        }
+      }
+      else if(message.destinationName=="environment/tem"){
+        $(".tem").val(message.payloadString);
+        if(temdata["datasets"][0]["data"].length==10){
+            temdata["datasets"][0]["data"].shift();
+            temdata["datasets"][0]["data"].push(message.payloadString);
+            reChart("temChart","temdata");
+        }
+        else{
+          temdata["datasets"][0]["data"].push(message.payloadString);
+          reChart("temChart","temdata");
+        }
+      }
+      else if(message.destinationName=="environment/light"){
+        $(".light").val(message.payloadString);
+        if(lightdata["datasets"][0]["data"].length==10){
+            lightdata["datasets"][0]["data"].shift();
+            lightdata["datasets"][0]["data"].push(message.payloadString);
+            reChart("lightChart","lightdata");
+        }
+        else{
+          lightdata["datasets"][0]["data"].push(message.payloadString);
+          reChart("lightChart","lightdata");
+        }
+      }
+      else if(message.destinationName=="environment/ultra"){
+        $(".ultra").val(message.payloadString);
+        if(ultradata["datasets"][0]["data"].length==10){
+            ultradata["datasets"][0]["data"].shift();
+            ultradata["datasets"][0]["data"].push(message.payloadString);
+            reChart("ultraChart","ultradata");
+        }
+        else{
+          ultradata["datasets"][0]["data"].push(message.payloadString);
+          reChart("ultraChart","ultradata");
+        }
+      }
+      else if(message.destinationName=="environment/impact"){
+        $(".impact").val(message.payloadString);
+        if(impactdata["datasets"][0]["data"].length==10){
+            impactdata["datasets"][0]["data"].shift();
+            impactdata["datasets"][0]["data"].push(message.payloadString);
+            reChart("impactChart","impactdata");
+        }
+        else{
+          impactdata["datasets"][0]["data"].push(message.payloadString);
+          reChart("impactChart","impactdata");
+        }
+      }
+      var str = message.destinationName;
+      str=str.substring(12,);
+      chk(str);
+    }
+
+    function onMessageDelivered(){
+
+    }
+
+
+
+
+    function calc(name, param, value){
+        var tar = "."+name;
+        value = parseInt(value);
+        if($(tar).val()==0 || $(tar).val()=="" || $(tar).val()==null) return false;
+        switch (param) {
+          case "<":
+            if($(tar).val()<value) return true;
+            break;
+          case "=":
+            if($(tar).val()==value) return true;
+              break;
+          case ">":
+            if($(tar).val()>value) return true;
+            break;
+          default:
+            return false;
+        }
+    }
+
+    function chk(sensor){
+      for(var items in functiongroup){
+        chk_detail(functiongroup[items], sensor);
+      }
+    }
+
+    function chk_detail(params, sensor){
+      var isContain = false;
+      for(var i in params){
+        if(params[i].name==sensor) isContain=true;
+      }
+      if(!isContain) return;
+      for(var i in params){
+        if(!calc(params[i].name,params[i].param,params[i].value)) return;
+        var tar = params[i].target;
+      }
+      message = new Paho.MQTT.Message(tar);
+      message.destinationName = "motor";
+      client.send(message);
+    }
+
+    function push(param){
+      var toPush = "motor"+param;
+      message = new Paho.MQTT.Message(toPush);
+      message.destinationName = "motor";
+      client.send(message);
+    }
+
+    $(document).ready(function(){
+      var num=1;
+      $(".addModule").on("click",function(){
+        num+=1;
+          $(".module").append('\
+          <div class="row animated fadeInRight">\
+            <select class="sensor'+num+' col" name="" style="color:#2196F3">\
+              <option value="hum">습도센서</option>\
+              <option value="tem">온도센서</option>\
+              <option value="light">조도센서</option>\
+              <option value="ultra">초음파센서</option>\
+              <option value="impact">충격감지</option>\
+            </select>\
+            <select class="param'+num+' col" name="" style="color:#2196F3">\
+              <option value="<"><</option>\
+              <option value="=">=</option>\
+              <option value=">">></option>\
+            </select>\
+            <input type="text" class="value'+num+' col" name="" value="" style="color:#2196F3">\
+          </div>\
+          ');
+      });
+
+      $(".save").on("click",function(){
+        var functions = new Array();
+        for(var i=1; i<num+1; i++){
+          var tar = new Sensor($(".sensor"+i).val(),$(".param"+i).val(),$(".value"+i).val(),$(".target").val());
+          functions.push(tar);
+        }
+        functiongroup.push(functions);
+        save();
+      });
+      $.ajax({
+        url:"server/alarm.php",//데이터를 전송할 파일
+        type:"POST",//전송 방식
+        data:{//보낼 데이터 key:value형식의 맵
+          condition:"get"
+        },
+        success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+          var result = JSON.parse(data);
+          var prev="";
+          var cur="";
+          var functions = new Array();
+          for(var i=0; i<result.length;i+=5){
+            cur=result[i];
+            if(prev!=cur){
+              if(functions!="")
+                functiongroup.push(functions);
+              functions = new Array();
+            }
+            functions.push(new Sensor(result[i+1],result[i+2],result[i+3],result[i+4]));
+            prev=cur;
+          }
+          functiongroup.push(functions);
+          console.log(result);
+        },
+      error: function(){
+          swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+        }
+      });
+    });
+
+    function save(){
+      $.ajax({
+        url:"server/alarm.php",
+        type:"POST",
+        data:{
+          condition:"default"
+        },
+        success: function(data){
+        },
+      error: function(){
+        }
+      });
+      for(var items in functiongroup){
+        save_detail(functiongroup[items], items);
+      }
+      swal({
+        title: "추가 성공!",
+        text: "함수가 성공적으로 생성되었습니다.",
+        type: "success",
+        confirmButtonColor: "#2196F3",
+        confirmButtonText: "확인",
+        closeOnConfirm: false
+      },
+      function(){
+        location.reload();
+      });
+    }
+
+    function save_detail(params, idx){
+      var values=[];
+      for(var i in params){
+        values.push(params[i].name);
+        values.push(params[i].param);
+        values.push(params[i].value);
+        values.push(params[i].target);
+      }
+      $.ajax({
+        url:"server/alarm.php",//데이터를 전송할 파일
+        type:"POST",//전송 방식
+        data:{//보낼 데이터 key:value형식의 맵
+          condition:"add",
+          idx:idx,
+          data :values
+        },
+        success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+        },
+      error: function(){
+          swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+        }
+      });
+    }
+
+    $.fn.extend({
+    animateCss: function (animationName) {
+        var animationEnd = 'webkitAnimationEnd mozAnimationEnd MSAnimationEnd oanimationend animationend';
+        this.addClass('animated ' + animationName).one(animationEnd, function() {
+            $(this).removeClass('animated ' + animationName);
+        });
+      }
+  });
+  $(".login-btn").on("click",function(){
+      $.ajax({
+        url:"server/login.php",//데이터를 전송할 파일
+        type:"POST",//전송 방식
+        data:{//보낼 데이터 key:value형식의 맵
+          id:$("#id").val(),
+          pwd :$("#pwd").val()
+        },
+        success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+          if(data=="success"){
+            location.href="index.html";
+            }
+          else{
+            swal("",data,"error");
+          }
+        },
+    error: function(){
+        swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+      }
+    });
+  });
+
+  $(".register-btn").on("click",function(){
+    if($("#rpwd").val()==$("#rpwdc").val()){
+        $.ajax({
+          url:"server/register.php",//데이터를 전송할 파일
+          type:"POST",//전송 방식
+          data:{//보낼 데이터 key:value형식의 맵
+            id:$("#rid").val(),
+            pwd :$("#rpwd").val(),
+          },
+          success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+            if(data=="success"){
+              swal({
+                title: "회원가입 성공!",
+                text: "회원가입이 성공적으로 완료되었습니다.",
+                type: "success"
+              },
+              function(){
+                swal("Deleted!", "Your imaginary file has been deleted.", "success");
+                location.href="index.html";
+              });
+              }
+            else{
+              swal("",data,"error");
+            }
+          },
+      error: function(){
+          swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+        }
+      });
+    }
+    else{
+        swal("","비밀번호와 비밀번호 확인이 같지 않습니다.","error");
+    }
+  });
+  $(".logout-btn").on("click",function(){
+      $.ajax({
+        url:"server/logout.php",//데이터를 전송할 파일
+        type:"POST",//전송 방식
+        data:{//보낼 데이터 key:value형식의 맵
+        },
+        success: function(data){//ajax전송 후 성공 응답을 받았을 시, 이때 data는 대상 php파일에서 echo로 출력한 값
+            location.href="index.html";
+        },
+    error: function(){
+        swal("에러 발생!","잠시후 다시 시도해 주세요.","error");
+      }
+    });
+  });
+  </script>
+  <!-- Bootstrap tooltips -->
+  <script type="text/javascript" src="js/tether.min.js"></script>
+  <!-- Bootstrap core JavaScript -->
+  <script type="text/javascript" src="js/bootstrap.min.js"></script>
+  <!-- MDB core JavaScript -->
+  <script type="text/javascript" src="js/mdb.min.js"></script>
+</body>
+
+</html>
